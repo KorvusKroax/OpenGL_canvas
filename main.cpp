@@ -1,6 +1,9 @@
 #include <iostream>
+
 #include <openGL/open_gl.h>
 #include <canvas.h>
+
+
 
 const unsigned int CANVAS_WIDTH = 320;
 const unsigned int CANVAS_HEIGHT = 200;
@@ -15,12 +18,11 @@ Sprite mousePointer = spriteSheet.getSprite(0, 0, 30, 30);
 
 void show(Canvas *canvas)
 {
-    canvas->drawImage(30, 30, "Green_Marble_Alien_Face_128x128.png");
-    canvas->drawSprite(mouseX, mouseY, &mousePointer);
-    canvas->drawCircle(mouseX, mouseY, 5, 0xFFFFFF00);
+    // canvas->drawImage(30, 30, "Green_Marble_Alien_Face_128x128.png");
+    // canvas->drawSprite(mouseX, mouseY, &mousePointer);
+    canvas->drawCircle(mouseX, mouseY, 5, 0xffffff00);
+    canvas->floodFill(mouseX, mouseY, 0xff000088);
 }
-
-
 
 void userControl(OpenGL *openGL)
 {
@@ -34,8 +36,6 @@ void userControl(OpenGL *openGL)
     mouseX = mouseX / openGL->pixelScale;
     mouseY = openGL->height - mouseY / openGL->pixelScale;
 }
-
-
 
 int main()
 {

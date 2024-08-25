@@ -149,40 +149,51 @@ class Canvas
             } while (xx < 0);
         }
 
-        // void floodFill(int x, int y, int color)
-        // {
-        //     unsigned int targetColor = getPixel(x, y);
-        //     if (targetColor == color.value) return;
+        void floodFill(int x, int y, int color)
+        {
+            int targetColor = getPixel(x, y);
+            if (targetColor == color || targetColor == -1) return;
 
-        //     Vector2Int *dir = new Vector2Int[4] { Vector2Int(0, 1), Vector2Int(1, -1), Vector2Int(-1, -1), Vector2Int(-1, 1) };
-        //     int *next = new int[width * height * 2];
-        //     int index = 0;
+            int *next = new int[width * height * 2];
+            int index = 0;
 
-        //     while (true) {
-        //         setPixel(x, y, color);
-        //         for (int i = 0; i < 4; i++) {
-        //             x += dir[i].x;
-        //             y += dir[i].y;
-        //             if (getPixel(x, y) == targetColor) {
-        //                 next[index] = x;
-        //                 next[index + 1] = y;
-        //                 index += 2;
-        //             }
-        //         }
-        //         if (index == 0) break;
-        //         index -= 2;
-        //         x = next[index];
-        //         y = next[index + 1];
-        //     }
+            while (true) {
+                setPixel(x, y, color);
 
-        //     delete[] next;
-        //     delete[] dir;
-        // }
+                if (getPixel(x, y + 1) == targetColor) {
+                    next[index] = x;
+                    next[index + 1] = y + 1;
+                    index += 2;
+                }
+                if (getPixel(x + 1, y) == targetColor) {
+                    next[index] = x + 1;
+                    next[index + 1] = y;
+                    index += 2;
+                }
+                if (getPixel(x, y - 1) == targetColor) {
+                    next[index] = x;
+                    next[index + 1] = y - 1;
+                    index += 2;
+                }
+                if (getPixel(x - 1, y) == targetColor) {
+                    next[index] = x - 1;
+                    next[index + 1] = y;
+                    index += 2;
+                }
+
+                if (index == 0) break;
+                index -= 2;
+                x = next[index];
+                y = next[index + 1];
+            }
+
+            delete[] next;
+        }
 
         void spanFill(int x, int y, int color)
         {
             unsigned int targetColor = getPixel(x, y);
-            if (targetColor == color) return;
+            if (targetColor == color || targetColor == -1) return;
 
             int *next = new int[width * height * 2];
             int index = 0;
@@ -244,6 +255,8 @@ class Canvas
                 y  = next[index + 2];
                 dy = next[index + 3];
             }
+
+            delete[] next;
         }
 
         void drawImage(int x, int y, const char *fileName, bool flipImageVertically = true)
