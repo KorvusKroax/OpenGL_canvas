@@ -49,7 +49,7 @@ class OpenGL
             const GLFWvidmode *videoMode = glfwGetVideoMode(primaryMonitor);
             window = glfwCreateWindow(videoMode->width, videoMode->height, title, primaryMonitor, NULL);
 
-            pixelScale = (width > height) ?
+            pixelScale = (width < height) ?
                 (float)videoMode->width / width :
                 (float)videoMode->height / height;
 
@@ -107,6 +107,8 @@ class OpenGL
     public:
         unsigned int width;
         unsigned int height;
+        unsigned int offsetX;
+        unsigned int offsetY;
         float pixelScale;
         int *pixels = nullptr;
         const char *title;
