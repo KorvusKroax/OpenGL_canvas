@@ -133,7 +133,6 @@ class OpenGL
                 case WINDOWED: initWindowed(width, height); break;
                 case FULLSCREEN: initFullscreen(width, height); break;
             }
-
             if (window == NULL) {
                 std::cout << "Failed to create GLFW window" << std::endl;
                 glfwTerminate();
@@ -146,7 +145,6 @@ class OpenGL
             }
 
             initQuad();
-
             quadShader = new Shader("shaders/canvas.vert", "shaders/canvas.frag");
         }
 
@@ -170,6 +168,7 @@ class OpenGL
             glfwSwapBuffers(window);
             glfwPollEvents();
 
+            // misc
             currentTime = static_cast<float>(glfwGetTime());
             deltaTime = currentTime - lastTime;
             lastTime = currentTime;
