@@ -20,6 +20,8 @@ class OpenGL
         unsigned int renderbuffer;
         Shader *quadShader;
 
+        int screenOffsetX, screenOffsetY;
+
         float quadVertices[24] =  {
             // positions    // texCoords
             -1.0f,  1.0f,   0.0f, 1.0f,     // left top
@@ -40,6 +42,9 @@ class OpenGL
             window = glfwCreateWindow(width * pixelScale, height * pixelScale, title, NULL, NULL);
 
             canvas = new Canvas(width, height);
+
+            screenOffsetX = 0;
+            screenOffsetY = 0;
         }
 
         void initFullscreen(unsigned int width = 0, unsigned int height = 0)
@@ -51,6 +56,9 @@ class OpenGL
             width = (width) ? width : videoMode->width / pixelScale;
             height = (height) ? height : videoMode->height / pixelScale;
             canvas = new Canvas(width, height);
+
+            screenOffsetX = (videoMode->width - width * pixelScale) * .5f;
+            screenOffsetY = (videoMode->height - height * pixelScale) * .5f;
 
             for (int i = 0; i < 24; i += 4) {
                 quadVertices[i + 0] *= (float)canvas->width / videoMode->width * pixelScale;
@@ -109,6 +117,7 @@ class OpenGL
         GLFWwindow *window;
 
         float deltaTime;
+        int mouseX, mouseY;
 
         OpenGL(ScreenMode screenMode, float pixelScale = 1, unsigned int width = 0, unsigned int height = 0, const char *title = "OpenGL - 2D window")
         {
@@ -164,6 +173,15 @@ class OpenGL
             currentTime = static_cast<float>(glfwGetTime());
             deltaTime = currentTime - lastTime;
             lastTime = currentTime;
+
+            double mX, mY;
+            glfwGetCursorPos(window, &mX, &mY);
+            mouseX = int((mX - screenOffsetX) / pixelScale);
+            if (mouseX < 0) mouseX = 0;
+            if (mouseX > canvas->width - 1) mouseX = canvas->width - 1;
+            mouseY = int(canvas->height - (mY - screenOffsetY) / pixelScale);
+            if (mouseY < 0) mouseY = 0;
+            if (mouseY > canvas->height - 1) mouseY = canvas->height - 1;
         }
 
         bool shouldClose() { return glfwWindowShouldClose(window); }
