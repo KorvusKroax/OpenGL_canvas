@@ -3,7 +3,7 @@
 
 const unsigned int CANVAS_WIDTH = 320;
 const unsigned int CANVAS_HEIGHT = 200;
-const float PIXEL_SCALE = 5;
+const float PIXEL_SCALE = 4;
 
 Canvas *mouseSprite;
 
@@ -17,8 +17,8 @@ void show(OpenGL *openGL)
     openGL->canvas->drawCircle(openGL->canvas->width - 125, openGL->canvas->height - 70, 10, 0xff00ffff, true);
     openGL->canvas->spanFill(openGL->canvas->width - 125, openGL->canvas->height - 70, 0x8800ffff, true);
 
-    openGL->canvas->drawCircle(openGL->canvas->width - 50, 50, 15, 0xff0000ff, true);
-    openGL->canvas->floodFill(openGL->canvas->width - 50, 50, 0x880000ff, true);
+    openGL->canvas->drawCircle(openGL->canvas->width - 5, 50, 15, 0xff0000ff, true);
+    openGL->canvas->floodFill(openGL->canvas->width - 5, 50, 0x880000ff, true);
 
     openGL->canvas->drawLine(0, 0, openGL->canvas->width - 1, openGL->canvas->height - 1, 0x4400ff00, true);
     openGL->canvas->drawCircle(openGL->canvas->width >> 1, openGL->canvas->height >> 1, 40, 0x66ff4444, true);
@@ -29,7 +29,7 @@ void show(OpenGL *openGL)
 
 int main()
 {
-    OpenGL openGL = OpenGL(FULLSCREEN, PIXEL_SCALE, CANVAS_WIDTH, CANVAS_HEIGHT);
+    OpenGL openGL = OpenGL(FULLSCREEN, PIXEL_SCALE);//, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     mouseSprite = new Canvas(11, 11);
     mouseSprite->clearCanvas();

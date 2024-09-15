@@ -35,26 +35,26 @@ class Canvas
             }
         }
 
-        void setPixel(int x, int y, int value, bool alphaMask = false)
+        void setPixel(int x, int y, int color, bool alphaMask = false)
         {
             if (x >= 0 && x < width && y >= 0 && y < height) {
-                if (alphaMask && (value >> 24) < 255) {
-                    if ((value >> 24) == 0) {
+                if (alphaMask && (color >> 24) < 255) {
+                    if ((color >> 24) == 0) {
                         return;
                     }
 
                     int pixel = pixels[x + y * width];
 
-                    int alpha = (value & 0xff000000) >> 24;
+                    int alpha = (color & 0xff000000) >> 24;
                     float weight = (float)alpha / 255;
 
-                    int r = int( (pixel & 0x000000ff)        * (1.0f - weight) + (value & 0x000000ff)         * weight);
-                    int g = int(((pixel & 0x0000ff00) >> 8)  * (1.0f - weight) + ((value & 0x0000ff00) >> 8)  * weight);
-                    int b = int(((pixel & 0x00ff0000) >> 16) * (1.0f - weight) + ((value & 0x00ff0000) >> 16) * weight);
+                    int r = int( (pixel & 0x000000ff)        * (1.0f - weight) + (color & 0x000000ff)         * weight);
+                    int g = int(((pixel & 0x0000ff00) >> 8)  * (1.0f - weight) + ((color & 0x0000ff00) >> 8)  * weight);
+                    int b = int(((pixel & 0x00ff0000) >> 16) * (1.0f - weight) + ((color & 0x00ff0000) >> 16) * weight);
 
                     pixels[x + y * width] = r | (g << 8) | (b << 16) | (alpha << 24);
                 } else {
-                    pixels[x + y * width] = value;
+                    pixels[x + y * width] = color;
                 }
             }
         }
@@ -68,23 +68,25 @@ class Canvas
             }
         }
 
-        int getPixel(int x, int y, bool *offScreen = nullptr)
+        bool getPixel(int x, int y, int *color)
         {
             if (x >= 0 && x < width && y >= 0 && y < height) {
-                if (offScreen != nullptr) *(offScreen) = false;
-                return pixels[x + y * width];
+                *(color) = pixels[x + y * width];
+                return true;
             }
 
-            if (offScreen != nullptr) *(offScreen) = true;
-            return 0;
+            *(color) = 0;
+            return false;
         }
 
         Canvas getPixels(int x, int y, unsigned int w, unsigned int h)
         {
+            int value;
             Canvas canvas = Canvas(w, h);
             for (int i = 0; i < w; i++) {
                 for (int j = 0; j < h; j++) {
-                    canvas.pixels[i + j * w] = getPixel(x + i, y + j);
+                    getPixel(x + i, y + j, &value);
+                    canvas.pixels[i + j * w] = value;
                 }
             }
 
@@ -188,9 +190,8 @@ class Canvas
 
         void floodFill(int x, int y, int color, bool alphaMask = false)
         {
-            bool offScreen;
-            int targetColor = getPixel(x, y, &offScreen);
-            if (targetColor == color || offScreen) return;
+            int targetColor, pixel;
+            if (!getPixel(x, y, &targetColor) || targetColor == color) return;
 
             int *next = new int[width * height * 2];
             int index = 0;
@@ -200,8 +201,7 @@ class Canvas
             setPixel(x, y, color, alphaMask);
             while (true) {
                 for (int i = 0; i < 8; i += 2) {
-                    int pixel = getPixel(x + dir[i], y + dir[i + 1], &offScreen);
-                    if (pixel == targetColor && !offScreen) {
+                    if (getPixel(x + dir[i], y + dir[i + 1], &pixel) && pixel == targetColor) {
                         setPixel(x + dir[i], y + dir[i + 1], color, alphaMask);
                         next[index] = x + dir[i];
                         next[index + 1] = y + dir[i + 1];
@@ -220,9 +220,8 @@ class Canvas
 
         void spanFill(int x, int y, int color, bool alphaMask = false)
         {
-            bool offScreen;
-            unsigned int targetColor = getPixel(x, y, &offScreen), pixel;
-            if (targetColor == color || offScreen) return;
+            int targetColor, pixel;
+            if (!getPixel(x, y, &targetColor) || targetColor == color) return;
 
             int *next = new int[width * height * 2];
             int index = 0;
@@ -240,11 +239,8 @@ class Canvas
 
             while (true) {
                 x = x1;
-                pixel = getPixel(x, y, &offScreen);
-                if (pixel == targetColor && !offScreen) {
-                    while (true) {
-                        pixel = getPixel(x - 1, y, &offScreen);
-                        if (pixel != targetColor || offScreen) break;
+                if (getPixel(x, y, &pixel) && pixel == targetColor) {
+                    while (getPixel(x - 1, y, &pixel) && pixel == targetColor) {
                         setPixel(x - 1, y, color, alphaMask);
                         x--;
                     }
@@ -258,9 +254,7 @@ class Canvas
                 }
 
                 while (x1 <= x2) {
-                    while (true) {
-                        pixel = getPixel(x1, y, &offScreen);
-                        if (pixel != targetColor || offScreen) break;
+                    while (getPixel(x1, y, &pixel) && pixel == targetColor) {
                         setPixel(x1, y, color, alphaMask);
                         x1++;
                     }
@@ -279,11 +273,7 @@ class Canvas
                         index += 4;
                     }
                     x1++;
-                    while (x1 < x2) {
-                        pixel = getPixel(x1, y, &offScreen);
-                        if (pixel == targetColor || offScreen) break;
-                        x1++;
-                    }
+                    while (x1 < x2 && getPixel(x1, y, &pixel) && pixel != targetColor) x1++;
                     x = x1;
                 }
                 if (index == 0) break;
