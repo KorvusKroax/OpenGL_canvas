@@ -3,15 +3,12 @@
 #include <openGL/glad/glad.h>
 #include <openGL/GLFW/glfw3.h>
 #include <openGL/shader.h>
-
-
+#include <canvas.h>
 
 enum ScreenMode {
     WINDOWED,
     FULLSCREEN
 };
-
-
 
 class OpenGL
 {
@@ -36,26 +33,28 @@ class OpenGL
 
         float currentTime, lastTime;
 
-        void initWindowed()
+        void initWindowed(unsigned int width, unsigned int height)
         {
             glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
             glfwWindowHint(GLFW_DECORATED, GLFW_TRUE); // frame on/off
             window = glfwCreateWindow(width * pixelScale, height * pixelScale, title, NULL, NULL);
+
+            canvas = new Canvas(width, height);
         }
 
-        void initFullscreen()
+        void initFullscreen(unsigned int width = 0, unsigned int height = 0)
         {
             GLFWmonitor *primaryMonitor =  glfwGetPrimaryMonitor();
             const GLFWvidmode *videoMode = glfwGetVideoMode(primaryMonitor);
             window = glfwCreateWindow(videoMode->width, videoMode->height, title, primaryMonitor, NULL);
 
-            pixelScale = (width < height) ?
-                (float)videoMode->width / width :
-                (float)videoMode->height / height;
+            width = (width) ? width : videoMode->width / pixelScale;
+            height = (height) ? height : videoMode->height / pixelScale;
+            canvas = new Canvas(width, height);
 
             for (int i = 0; i < 24; i += 4) {
-                quadVertices[i + 0] *= (float)width / videoMode->width * pixelScale;
-                quadVertices[i + 1] *= (float)height / videoMode->height * pixelScale;
+                quadVertices[i + 0] *= (float)canvas->width / videoMode->width * pixelScale;
+                quadVertices[i + 1] *= (float)canvas->height / videoMode->height * pixelScale;
             }
         }
 
@@ -78,14 +77,14 @@ class OpenGL
 
             glGenTextures(1, &textureColorbuffer);
             glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, canvas->width, canvas->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, canvas->pixels);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
 
             glGenRenderbuffers(1, &renderbuffer);
             glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, canvas->width, canvas->height);
             glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderbuffer);
             if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
                 std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
@@ -100,28 +99,20 @@ class OpenGL
             glDeleteFramebuffers(1, &framebuffer);
             glDeleteTextures(1, &textureColorbuffer);
             glDeleteRenderbuffers(1, &renderbuffer);
-
             glfwTerminate();
         }
 
     public:
-        unsigned int width;
-        unsigned int height;
-        unsigned int offsetX;
-        unsigned int offsetY;
+        Canvas *canvas;
         float pixelScale;
-        int *pixels = nullptr;
         const char *title;
         GLFWwindow *window;
 
         float deltaTime;
 
-        OpenGL(ScreenMode screenMode, unsigned int width, unsigned int height, int *pixels, float pixelScale = 1, const char *title = "OpenGL - 2D window")
+        OpenGL(ScreenMode screenMode, float pixelScale = 1, unsigned int width = 0, unsigned int height = 0, const char *title = "OpenGL - 2D window")
         {
-            this->width = width;
-            this->height = height;
             this->pixelScale = pixelScale;
-            this->pixels = pixels;
             this->title = title;
 
             glfwInit();
@@ -129,10 +120,9 @@ class OpenGL
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-            if (screenMode == WINDOWED) {
-                initWindowed();
-            } else if (screenMode == FULLSCREEN) {
-                initFullscreen();
+            switch (screenMode) {
+                case WINDOWED: initWindowed(width, height); break;
+                case FULLSCREEN: initFullscreen(width, height); break;
             }
 
             if (window == NULL) {
@@ -165,7 +155,7 @@ class OpenGL
             glDisable(GL_DEPTH_TEST);
 
             glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, canvas->width, canvas->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, canvas->pixels);
             glDrawArrays(GL_TRIANGLES, 0, 6);
 
             glfwSwapBuffers(window);

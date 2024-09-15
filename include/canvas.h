@@ -1,8 +1,9 @@
 #pragma once
 
-#include <sprite.h>
+#define STB_IMAGE_IMPLEMENTATION
 
-
+#include <stb_image.h>
+#include <iostream>
 
 class Canvas
 {
@@ -34,10 +35,36 @@ class Canvas
             }
         }
 
-        void setPixel(int x, int y, int value)
+        void setPixel(int x, int y, int value, bool alphaMask = false)
         {
             if (x >= 0 && x < width && y >= 0 && y < height) {
-                pixels[x + y * width] = value;
+                if (alphaMask && (value >> 24) < 255) {
+                    if ((value >> 24) == 0) {
+                        return;
+                    }
+
+                    int pixel = pixels[x + y * width];
+
+                    int alpha = (value & 0xff000000) >> 24;
+                    float weight = (float)alpha / 255;
+
+                    int r = int( (pixel & 0x000000ff)        * (1.0f - weight) + (value & 0x000000ff)         * weight);
+                    int g = int(((pixel & 0x0000ff00) >> 8)  * (1.0f - weight) + ((value & 0x0000ff00) >> 8)  * weight);
+                    int b = int(((pixel & 0x00ff0000) >> 16) * (1.0f - weight) + ((value & 0x00ff0000) >> 16) * weight);
+
+                    pixels[x + y * width] = r | (g << 8) | (b << 16) | (alpha << 24);
+                } else {
+                    pixels[x + y * width] = value;
+                }
+            }
+        }
+
+        void setPixels(int x, int y, Canvas *canvas, bool alphaMask = false)
+        {
+            for (int i = 0; i < canvas->width; i++) {
+                for (int j = 0; j < canvas->height; j++) {
+                    setPixel(x + i, y + j, canvas->pixels[i + j * canvas->width], alphaMask);
+                }
             }
         }
 
@@ -47,27 +74,34 @@ class Canvas
                 return pixels[x + y * width];
             }
 
-            return -1;
+            return 0;
         }
 
-        void drawRectangle(int x, int y, int w, int h, int color, bool centered = false)
+        Canvas getPixels(int x, int y, unsigned int w, unsigned int h)
         {
-            if (centered) {
-                x -= w >> 1;
-                y -= h >> 1;
+            Canvas canvas = Canvas(w, h);
+            for (int i = 0; i < w; i++) {
+                for (int j = 0; j < h; j++) {
+                    canvas.pixels[i + j * w] = getPixel(x + i, y + j);
+                }
             }
 
+            return canvas;
+        }
+
+        void drawRectangle(int x, int y, int w, int h, int color, bool alphaMask = false)
+        {
             for (int i = 0; i < w; i++) {
-                setPixel(x + i, y        , color);
-                setPixel(x + i, y + h - 1, color);
+                setPixel(x + i, y        , color, alphaMask);
+                setPixel(x + i, y + h - 1, color, alphaMask);
             }
             for (int i = 1; i < h - 1; i++) {
-                setPixel(x        , y + i, color);
-                setPixel(x + w - 1, y + i, color);
+                setPixel(x        , y + i, color, alphaMask);
+                setPixel(x + w - 1, y + i, color, alphaMask);
             }
         }
 
-        void drawLine(int x1, int y1, int x2, int y2, int color)
+        void drawLine(int x1, int y1, int x2, int y2, int color, bool alphaMask = false)
         {
             int dx = abs(x2 - x1);
             int dy = abs(y2 - y1);
@@ -80,7 +114,7 @@ class Canvas
                 int y = y1;
                 int d = dy * 2 - dx;
                 for (int x = x1; x != x2; x += sx) {
-                    setPixel(x, y, color);
+                    setPixel(x, y, color, alphaMask);
                     if (d > 0) {
                         y += sy;
                         d -= dx * 2;
@@ -91,7 +125,7 @@ class Canvas
                 int x = x1;
                 int d = dx * 2 - dy;
                 for (int y = y1; y != y2; y += sy) {
-                    setPixel(x, y, color);
+                    setPixel(x, y, color, alphaMask);
                     if (d > 0) {
                         x += sx;
                         d -= dy * 2;
@@ -133,23 +167,23 @@ class Canvas
             }
         }
 
-        void drawCircle(int x, int y, int r, int color)
+        void drawCircle(int x, int y, int r, int color, bool alphaMask = false)
         {
             int xx = -r;
             int yy = 0;
             int rr = 2 - 2 * r;
             do {
-                setPixel(x - xx, y + yy, color);
-                setPixel(x - yy, y - xx, color);
-                setPixel(x + xx, y - yy, color);
-                setPixel(x + yy, y + xx, color);
+                setPixel(x - xx, y + yy, color, alphaMask);
+                setPixel(x - yy, y - xx, color, alphaMask);
+                setPixel(x + xx, y - yy, color, alphaMask);
+                setPixel(x + yy, y + xx, color, alphaMask);
                 r = rr;
                 if (r <= yy) rr += ++yy * 2 + 1;
                 if (r > xx || rr > yy) rr += ++xx * 2 + 1;
             } while (xx < 0);
         }
 
-        void floodFill(int x, int y, int color)
+        void floodFill(int x, int y, int color, bool alphaMask = false)
         {
             int targetColor = getPixel(x, y);
             if (targetColor == color || targetColor == -1) return;
@@ -157,28 +191,17 @@ class Canvas
             int *next = new int[width * height * 2];
             int index = 0;
 
-            while (true) {
-                setPixel(x, y, color);
+            int dir[] = {0,1, 1,0, 0,-1, -1,0};
 
-                if (getPixel(x, y + 1) == targetColor) {
-                    next[index] = x;
-                    next[index + 1] = y + 1;
-                    index += 2;
-                }
-                if (getPixel(x + 1, y) == targetColor) {
-                    next[index] = x + 1;
-                    next[index + 1] = y;
-                    index += 2;
-                }
-                if (getPixel(x, y - 1) == targetColor) {
-                    next[index] = x;
-                    next[index + 1] = y - 1;
-                    index += 2;
-                }
-                if (getPixel(x - 1, y) == targetColor) {
-                    next[index] = x - 1;
-                    next[index + 1] = y;
-                    index += 2;
+            setPixel(x, y, color, alphaMask);
+            while (true) {
+                for (int i = 0; i < 8; i += 2) {
+                    if (getPixel(x + dir[i], y + dir[i + 1]) == targetColor) {
+                        setPixel(x + dir[i], y + dir[i + 1], color, alphaMask);
+                        next[index] = x + dir[i];
+                        next[index + 1] = y + dir[i + 1];
+                        index += 2;
+                    }
                 }
 
                 if (index == 0) break;
@@ -190,7 +213,7 @@ class Canvas
             delete[] next;
         }
 
-        void spanFill(int x, int y, int color)
+        void spanFill(int x, int y, int color, bool alphaMask = false)
         {
             unsigned int targetColor = getPixel(x, y);
             if (targetColor == color || targetColor == -1) return;
@@ -213,7 +236,7 @@ class Canvas
                 x = x1;
                 if (getPixel(x, y) == targetColor) {
                     while (getPixel(x - 1, y) == targetColor) {
-                        setPixel(x - 1, y, color);
+                        setPixel(x - 1, y, color, alphaMask);
                         x--;
                     }
                     if (x < x1) {
@@ -227,7 +250,7 @@ class Canvas
 
                 while (x1 <= x2) {
                     while (getPixel(x1, y) == targetColor) {
-                        setPixel(x1, y, color);
+                        setPixel(x1, y, color, alphaMask);
                         x1++;
                     }
                     if (x1 > x) {
@@ -275,26 +298,6 @@ class Canvas
                         255 << 24;
 
                     setPixel(x + i, y + j, color);
-                }
-            }
-        }
-
-        void drawSprite(int x, int y, Sprite *sprite, bool centered = false)
-        {
-            if (centered) {
-                x -= sprite->width >> 1;
-                y -= sprite->height >> 1;
-            }
-
-            for (int i = 0; i < sprite->width; i++) {
-                int xx = x + i;
-                if (xx >= 0 && xx < width) {
-                    for (int j = 0; j < sprite->height; j++) {
-                        int yy = y + j;
-                        if (yy >= 0 && yy < height) {
-                            pixels[xx + yy * width] = sprite->pixels[i + j * sprite->width];
-                        }
-                    }
                 }
             }
         }

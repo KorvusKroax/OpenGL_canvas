@@ -1,7 +1,6 @@
 #pragma once
 
 #include <openGL/glad/glad.h>
-
 #include <string>
 #include <fstream>
 #include <sstream>

@@ -1,30 +1,10 @@
 #pragma once
 
 #define STB_IMAGE_IMPLEMENTATION
+
 #include <stb_image.h>
-
-
-
-class Sprite
-{
-    public:
-        unsigned int width;
-        unsigned int height;
-        int *pixels;
-
-        Sprite() { }
-
-        Sprite(int width, int height, int *pixels)
-        {
-            this->width = width;
-            this->height = height;
-            this->pixels = pixels;
-        }
-
-        ~Sprite() { delete[] pixels; }
-};
-
-
+#include <canvas.h>
+#include <iostream>
 
 class SpriteSheet
 {
@@ -45,19 +25,19 @@ class SpriteSheet
 
         ~SpriteSheet() { delete[] pixels; }
 
-        Sprite getSprite(int x, int y, int w, int h)
+        Canvas getSprite(int x, int y, int w, int h)
         {
-            int* spritePixels = new int[w * h];
+            Canvas sprite = Canvas(w, h);
             for (int i = 0; i < w; i++) {
                 for (int j = 0; j < h; j++) {
                     int r = pixels[((x + i) * channelCount + 0) + (y + j) * width * channelCount];
                     int g = pixels[((x + i) * channelCount + 1) + (y + j) * width * channelCount];
                     int b = pixels[((x + i) * channelCount + 2) + (y + j) * width * channelCount];
                     int a = 255;
-                    spritePixels[i + j * w] = r | (g << 8) | (b << 16) | (a << 24);
+                    sprite.pixels[i + j * w] = r | (g << 8) | (b << 16) | (a << 24);
                 }
             }
 
-            return Sprite(w, h, spritePixels);
+            return sprite;
         }
 };
