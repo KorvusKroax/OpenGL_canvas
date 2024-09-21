@@ -172,20 +172,20 @@ class Canvas
             }
         }
 
-        void drawCircle(int x, int y, int r, int color, bool alphaMask = false)
+        void drawCircle(int cx, int cy, int r, int color, bool alphaMask = false)
         {
-            int xx = -r;
-            int yy = 0;
-            int rr = 2 - 2 * r;
+            int x = -r;
+            int y = 0;
+            int p = 2 - 2 * r;
             do {
-                setPixel(x - xx, y + yy, color, alphaMask);
-                setPixel(x - yy, y - xx, color, alphaMask);
-                setPixel(x + xx, y - yy, color, alphaMask);
-                setPixel(x + yy, y + xx, color, alphaMask);
-                r = rr;
-                if (r <= yy) rr += ++yy * 2 + 1;
-                if (r > xx || rr > yy) rr += ++xx * 2 + 1;
-            } while (xx < 0);
+                setPixel(cx - x, cy + y, color, alphaMask);
+                setPixel(cx - y, cy - x, color, alphaMask);
+                setPixel(cx + x, cy - y, color, alphaMask);
+                setPixel(cx + y, cy + x, color, alphaMask);
+                r = p;
+                if (r <= y) p += ++y * 2 + 1;
+                if (r > x || p > y) p += ++x * 2 + 1;
+            } while (x < 0);
         }
 
         void floodFill(int x, int y, int color, bool alphaMask = false)
