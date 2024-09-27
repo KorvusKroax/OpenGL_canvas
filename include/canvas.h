@@ -106,14 +106,21 @@ class Canvas
             }
         }
 
+        void drawFilledRectangle(int x, int y, int w, int h, ColorRGBA color)
+        {
+            for (int i = 0; i < h; i++) {
+                for (int j = 0; j < w; j++)  {
+                    setPixel(x + j, y + i, color);
+                }
+            }
+        }
+
         void drawLine(int x1, int y1, int x2, int y2, ColorRGBA color)
         {
             int dx = abs(x2 - x1);
             int dy = abs(y2 - y1);
             int sx = x1 < x2 ? 1 : -1;
             int sy = y1 < y2 ? 1 : -1;
-
-            int pos = x1 + y1 * width;
 
             if (dx > dy) {
                 int y = y1;
@@ -164,22 +171,15 @@ class Canvas
             int y = 0;
             int p = 2 - 2 * r;
 
-            for (int i = 0 + x; i <= 0 - x; i++) setPixel(cx - i, cy + y, color);
-
+            for (int i = cx + x; i <= cx - x; i++) setPixel(i, cy + y, color);
             while (y < rr) {
-
                 r = p;
-                if (r > x || p > y) {
-                    x++;
-                    p += x * 2 + 1;
-                }
+                if (r > x || p > y) p += ++x * 2 + 1;
                 if (r > y) continue;
+                p += ++y * 2 + 1;
 
-                y++;
-                p += y * 2 + 1;
-
-                for (int i = 0 + x; i <= 0 - x; i++) setPixel(cx - i, cy + y, color);
-                for (int i = 0 + x; i <= 0 - x; i++) setPixel(cx - i, cy - y, color);
+                for (int i = cx + x; i <= cx - x; i++) setPixel(i, cy + y, color);
+                for (int i = cx + x; i <= cx - x; i++) setPixel(i, cy - y, color);
             }
         }
 
