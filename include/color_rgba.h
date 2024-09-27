@@ -1,25 +1,25 @@
 #pragma once
 
-struct ColorRGBA
+class ColorRGBA
 {
     public:
-        unsigned int r;
-        unsigned int g;
-        unsigned int b;
-        unsigned int a;
         unsigned int value;
 
-        ColorRGBA(unsigned int r = 0, unsigned int g = 0, unsigned int b = 0, unsigned int a = 0)
+        ColorRGBA(unsigned int value = 0)
         {
-            this->r = r;
-            this->g = g;
-            this->b = b;
-            this->a = a;
-            updateValue();
+            this->value = value;
         }
 
-        void updateValue()
+        ColorRGBA(unsigned int r, unsigned int g, unsigned int b, unsigned int a = 255)
         {
-            value = r | (g << 8) | (b << 16) | (a << 24);
+            this->value = r | (g << 8) | (b << 16) | (a << 24);
         }
+
+        int getRed() { return this->value & 0x000000ff; }
+
+        int getGreen() { return (this->value >> 8) & 0x000000ff; }
+
+        int getBlue() { return (this->value >> 16) & 0x000000ff; }
+
+        int getAlpha() { return (this->value >> 24) & 0x000000ff; }
 };

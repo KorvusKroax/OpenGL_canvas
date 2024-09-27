@@ -4,6 +4,7 @@
 
 #include <stb_image.h>
 #include <iostream>
+#include <color_rgba.h>
 
 class Canvas
 {
@@ -28,50 +29,50 @@ class Canvas
             memset(pixels, 0, width * height * sizeof(int));
         }
 
-        void fillCanvas(int color)
+        void fillCanvas(ColorRGBA color)
         {
             for (int i = 0; i < width * height; i++) {
-                pixels[i] = color;
+                pixels[i] = color.value;
             }
         }
 
-        void setPixel(int x, int y, int color, bool alphaMask = false)
+        void setPixel(int x, int y, ColorRGBA color)
         {
             if (x >= 0 && x < width && y >= 0 && y < height) {
-                if (alphaMask && (color >> 24) < 255) {
-                    if ((color >> 24) == 0) {
+                if (color.getAlpha() == 255) {
+                    pixels[x + y * width] = color.value;
+                } else {
+                    if (color.getAlpha() == 0) {
                         return;
                     }
 
-                    int pixel = pixels[x + y * width];
+                    ColorRGBA pixel = ColorRGBA(pixels[x + y * width]);
 
-                    int alpha = (color & 0xff000000) >> 24;
-                    float weight = (float)alpha / 255;
+                    float weight = color.getAlpha() / 255.0f;
 
-                    int r = int( (pixel & 0x000000ff)        * (1.0f - weight) + (color & 0x000000ff)         * weight);
-                    int g = int(((pixel & 0x0000ff00) >> 8)  * (1.0f - weight) + ((color & 0x0000ff00) >> 8)  * weight);
-                    int b = int(((pixel & 0x00ff0000) >> 16) * (1.0f - weight) + ((color & 0x00ff0000) >> 16) * weight);
+                    int r = int(pixel.getRed()   * (1.0f - weight) + color.getRed()   * weight);
+                    int g = int(pixel.getGreen() * (1.0f - weight) + color.getGreen() * weight);
+                    int b = int(pixel.getBlue()  * (1.0f - weight) + color.getBlue()  * weight);
+                    int a = (pixel.getAlpha() + color.getAlpha()) >> 1;
 
-                    pixels[x + y * width] = r | (g << 8) | (b << 16) | (alpha << 24);
-                } else {
-                    pixels[x + y * width] = color;
+                    pixels[x + y * width] = ColorRGBA(r, g, b, a).value;
                 }
             }
         }
 
-        void setPixels(int x, int y, Canvas *canvas, bool alphaMask = false)
+        void setPixels(int x, int y, Canvas *canvas)
         {
             for (int i = 0; i < canvas->width; i++) {
                 for (int j = 0; j < canvas->height; j++) {
-                    setPixel(x + i, y + j, canvas->pixels[i + j * canvas->width], alphaMask);
+                    setPixel(x + i, y + j, canvas->pixels[i + j * canvas->width]);
                 }
             }
         }
 
-        bool getPixel(int x, int y, int *color)
+        bool getPixel(int x, int y, ColorRGBA *color)
         {
             if (x >= 0 && x < width && y >= 0 && y < height) {
-                *(color) = pixels[x + y * width];
+                *(color) = ColorRGBA(pixels[x + y * width]);
                 return true;
             }
 
@@ -81,31 +82,31 @@ class Canvas
 
         Canvas getPixels(int x, int y, unsigned int w, unsigned int h)
         {
-            int value;
+            ColorRGBA color;
             Canvas canvas = Canvas(w, h);
             for (int i = 0; i < w; i++) {
                 for (int j = 0; j < h; j++) {
-                    getPixel(x + i, y + j, &value);
-                    canvas.pixels[i + j * w] = value;
+                    getPixel(x + i, y + j, &color);
+                    canvas.pixels[i + j * w] = color.value;
                 }
             }
 
             return canvas;
         }
 
-        void drawRectangle(int x, int y, int w, int h, int color, bool alphaMask = false)
+        void drawRectangle(int x, int y, int w, int h, ColorRGBA color)
         {
             for (int i = 0; i < w; i++) {
-                setPixel(x + i, y        , color, alphaMask);
-                setPixel(x + i, y + h - 1, color, alphaMask);
+                setPixel(x + i, y        , color);
+                setPixel(x + i, y + h - 1, color);
             }
             for (int i = 1; i < h - 1; i++) {
-                setPixel(x        , y + i, color, alphaMask);
-                setPixel(x + w - 1, y + i, color, alphaMask);
+                setPixel(x        , y + i, color);
+                setPixel(x + w - 1, y + i, color);
             }
         }
 
-        void drawLine(int x1, int y1, int x2, int y2, int color, bool alphaMask = false)
+        void drawLine(int x1, int y1, int x2, int y2, ColorRGBA color)
         {
             int dx = abs(x2 - x1);
             int dy = abs(y2 - y1);
@@ -118,7 +119,7 @@ class Canvas
                 int y = y1;
                 int d = dy * 2 - dx;
                 for (int x = x1; x != x2; x += sx) {
-                    setPixel(x, y, color, alphaMask);
+                    setPixel(x, y, color);
                     if (d > 0) {
                         y += sy;
                         d -= dx * 2;
@@ -129,7 +130,7 @@ class Canvas
                 int x = x1;
                 int d = dx * 2 - dy;
                 for (int y = y1; y != y2; y += sy) {
-                    setPixel(x, y, color, alphaMask);
+                    setPixel(x, y, color);
                     if (d > 0) {
                         x += sx;
                         d -= dy * 2;
@@ -137,72 +138,66 @@ class Canvas
                     d += dx * 2;
                 }
             }
-            setPixel(x2, y2, color, alphaMask);
+            setPixel(x2, y2, color);
         }
 
-        void drawLine_unsafe(int x1, int y1, int x2, int y2, int color)
-        {
-            int dx = abs(x2 - x1);
-            int dy = abs(y2 - y1);
-            int sx = x1 < x2 ? 1 : -1;
-            int sy = y1 < y2 ? width : -width;
-
-            if (dx > dy) {
-                int y = y1;
-                int d = dy * 2 - dx;
-                for (int pos = x1 + y1 * width; pos != x2 + y2 * width; pos += sx) {
-                    pixels[pos] = color;
-                    if (d > 0) {
-                        pos += sy;
-                        d -= dx * 2;
-                    }
-                    d += dy * 2;
-                }
-            } else {
-                int x = x1;
-                int d = dx * 2 - dy;
-                for (int pos = x1 + y1 * width; pos != x2 + y2 * width; pos += sy) {
-                    pixels[pos] = color;
-                    if (d > 0) {
-                        pos += sx;
-                        d -= dy * 2;
-                    }
-                    d += dx * 2;
-                }
-            }
-        }
-
-        void drawCircle(int cx, int cy, int r, int color, bool alphaMask = false)
+        void drawCircle(int cx, int cy, int r, ColorRGBA color)
         {
             int x = -r;
             int y = 0;
             int p = 2 - 2 * r;
-            do {
-                setPixel(cx - x, cy + y, color, alphaMask);
-                setPixel(cx - y, cy - x, color, alphaMask);
-                setPixel(cx + x, cy - y, color, alphaMask);
-                setPixel(cx + y, cy + x, color, alphaMask);
+            while (x < 0) {
+                setPixel(cx - x, cy + y, color);
+                setPixel(cx - y, cy - x, color);
+                setPixel(cx + x, cy - y, color);
+                setPixel(cx + y, cy + x, color);
                 r = p;
                 if (r <= y) p += ++y * 2 + 1;
                 if (r > x || p > y) p += ++x * 2 + 1;
-            } while (x < 0);
+            }
         }
 
-        void floodFill(int x, int y, int color, bool alphaMask = false)
+        void drawFilledCircle(int cx, int cy, int r, ColorRGBA color)
         {
-            int targetColor, pixel;
-            if (!getPixel(x, y, &targetColor) || targetColor == color) return;
+            int rr = r;
+            int x = -r;
+            int y = 0;
+            int p = 2 - 2 * r;
+
+            for (int i = 0 + x; i <= 0 - x; i++) setPixel(cx - i, cy + y, color);
+
+            while (y < rr) {
+
+                r = p;
+                if (r > x || p > y) {
+                    x++;
+                    p += x * 2 + 1;
+                }
+                if (r > y) continue;
+
+                y++;
+                p += y * 2 + 1;
+
+                for (int i = 0 + x; i <= 0 - x; i++) setPixel(cx - i, cy + y, color);
+                for (int i = 0 + x; i <= 0 - x; i++) setPixel(cx - i, cy - y, color);
+            }
+        }
+
+        void floodFill(int x, int y, ColorRGBA color)
+        {
+            ColorRGBA targetColor, pixel;
+            if (!getPixel(x, y, &targetColor) || targetColor.value == color.value) return;
 
             int *next = new int[width * height * 2];
             int index = 0;
 
             int dir[] = {0,1, 1,0, 0,-1, -1,0};
 
-            setPixel(x, y, color, alphaMask);
+            setPixel(x, y, color);
             while (true) {
                 for (int i = 0; i < 8; i += 2) {
-                    if (getPixel(x + dir[i], y + dir[i + 1], &pixel) && pixel == targetColor) {
-                        setPixel(x + dir[i], y + dir[i + 1], color, alphaMask);
+                    if (getPixel(x + dir[i], y + dir[i + 1], &pixel) && pixel.value == targetColor.value) {
+                        setPixel(x + dir[i], y + dir[i + 1], color);
                         next[index] = x + dir[i];
                         next[index + 1] = y + dir[i + 1];
                         index += 2;
@@ -218,10 +213,10 @@ class Canvas
             delete[] next;
         }
 
-        void spanFill(int x, int y, int color, bool alphaMask = false)
+        void spanFill(int x, int y, ColorRGBA color)
         {
-            int targetColor, pixel;
-            if (!getPixel(x, y, &targetColor) || targetColor == color) return;
+            ColorRGBA targetColor, pixel;
+            if (!getPixel(x, y, &targetColor) || targetColor.value == color.value) return;
 
             int *next = new int[width * height * 2];
             int index = 0;
@@ -239,9 +234,9 @@ class Canvas
 
             while (true) {
                 x = x1;
-                if (getPixel(x, y, &pixel) && pixel == targetColor) {
-                    while (getPixel(x - 1, y, &pixel) && pixel == targetColor) {
-                        setPixel(x - 1, y, color, alphaMask);
+                if (getPixel(x, y, &pixel) && pixel.value == targetColor.value) {
+                    while (getPixel(x - 1, y, &pixel) && pixel.value == targetColor.value) {
+                        setPixel(x - 1, y, color);
                         x--;
                     }
                     if (x < x1) {
@@ -254,8 +249,8 @@ class Canvas
                 }
 
                 while (x1 <= x2) {
-                    while (getPixel(x1, y, &pixel) && pixel == targetColor) {
-                        setPixel(x1, y, color, alphaMask);
+                    while (getPixel(x1, y, &pixel) && pixel.value == targetColor.value) {
+                        setPixel(x1, y, color);
                         x1++;
                     }
                     if (x1 > x) {
@@ -273,7 +268,7 @@ class Canvas
                         index += 4;
                     }
                     x1++;
-                    while (x1 < x2 && getPixel(x1, y, &pixel) && pixel != targetColor) x1++;
+                    while (x1 < x2 && getPixel(x1, y, &pixel) && pixel.value != targetColor.value) x1++;
                     x = x1;
                 }
                 if (index == 0) break;

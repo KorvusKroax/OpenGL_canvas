@@ -1,41 +1,46 @@
 #include <openGL/open_gl.h>
 #include <iostream>
 
-const unsigned int CANVAS_WIDTH = 320;
-const unsigned int CANVAS_HEIGHT = 200;
-const float PIXEL_SCALE = 4;
-
 Canvas *mouseSprite;
 
 void show(OpenGL *openGL)
 {
-    openGL->canvas->drawImage(10, 10, "Green_Marble_Alien_Face_128x128.png");
+    // openGL->canvas->drawImage(10, 10, "Green_Marble_Alien_Face_128x128.png");
 
-    Canvas cut = openGL->canvas->getPixels(15, 15, 30, 30);
-    openGL->canvas->setPixels(openGL->canvas->width - 120, openGL->canvas->height - 70, &cut);
+    // Canvas cut = openGL->canvas->getPixels(15, 15, 30, 30);
+    // openGL->canvas->setPixels(openGL->canvas->width - 120, openGL->canvas->height - 70, &cut);
 
-    openGL->canvas->drawCircle(openGL->canvas->width - 125, openGL->canvas->height - 70, 10, 0xff00ffff, true);
-    openGL->canvas->spanFill(openGL->canvas->width - 125, openGL->canvas->height - 70, 0x8800ffff, true);
+    // openGL->canvas->drawCircle(openGL->canvas->width - 125, openGL->canvas->height - 70, 10, ColorRGBA(255, 255, 0));
+    // openGL->canvas->spanFill(openGL->canvas->width - 125, openGL->canvas->height - 70, ColorRGBA(255, 255, 0, 128));
 
-    openGL->canvas->drawCircle(openGL->canvas->width - 5, 50, 15, 0xff0000ff, true);
-    openGL->canvas->floodFill(openGL->canvas->width - 5, 50, 0x880000ff, true);
+    // openGL->canvas->drawCircle(openGL->canvas->width - 5, 50, 15, ColorRGBA(255, 0, 0));
+    // openGL->canvas->floodFill(openGL->canvas->width - 5, 50, ColorRGBA(255, 0, 0, 128));
 
-    openGL->canvas->drawLine(0, 0, openGL->canvas->width - 1, openGL->canvas->height - 1, 0x4400ff00, true);
-    openGL->canvas->drawCircle(openGL->canvas->width >> 1, openGL->canvas->height >> 1, 40, 0x66ff4444, true);
+    // openGL->canvas->drawLine(0, 0, openGL->canvas->width - 1, openGL->canvas->height - 1, ColorRGBA(0, 255, 0, 64));
 
-    openGL->canvas->setPixels(openGL->mouseX - (mouseSprite->width >> 1), openGL->mouseY - (mouseSprite->height >> 1), mouseSprite, true);
-    openGL->canvas->setPixel(openGL->mouseX, openGL->mouseY, 0xffffffff);
+    openGL->canvas->drawCircle(openGL->canvas->width >> 1, openGL->canvas->height >> 1, 2, ColorRGBA(64, 64, 255, 96));
+
+    // openGL->canvas->drawFilledCircle(openGL->canvas->width >> 1, openGL->canvas->height >> 1, 30, ColorRGBA(64, 64, 255, 128));
+    // openGL->canvas->drawFilledCircle(openGL->canvas->width >> 1, openGL->canvas->height >> 1, 1, ColorRGBA(64, 64, 255, 128));
+
+    openGL->canvas->setPixels(openGL->mouseX - (mouseSprite->width >> 1), openGL->mouseY - (mouseSprite->height >> 1), mouseSprite);
+    openGL->canvas->setPixel(openGL->mouseX, openGL->mouseY, ColorRGBA(255, 255, 255));
 }
 
 int main()
 {
-    OpenGL openGL = OpenGL(FULLSCREEN, PIXEL_SCALE);//, CANVAS_WIDTH, CANVAS_HEIGHT);
+    OpenGL openGL = OpenGL(FULLSCREEN, 10);//, 320, 200);
+    // OpenGL openGL = OpenGL(WINDOWED, 4, 320, 200);
 
     mouseSprite = new Canvas(11, 11);
     mouseSprite->clearCanvas();
-    mouseSprite->drawCircle(5, 5, 5, 0xffffff00);
-    mouseSprite->floodFill(5, 5, 0x44ffff00);
-    mouseSprite->setPixel(5, 5, 0xffffff00);
+    mouseSprite->drawFilledCircle(5, 5, 5, ColorRGBA(0, 255, 255, 128));
+    // mouseSprite->drawCircle(5, 5, 5, ColorRGBA(0, 255, 255));
+    // mouseSprite->floodFill(5, 5, ColorRGBA(0, 255, 255, 128));
+    mouseSprite->setPixel(5, 5, ColorRGBA(255, 255, 255));
+
+    glfwSetInputMode(openGL.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    glfwSetInputMode(openGL.window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
     while (!openGL.shouldClose())
     {
