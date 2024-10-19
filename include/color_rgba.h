@@ -5,9 +5,9 @@ class ColorRGBA
     public:
         unsigned int value;
 
-        ColorRGBA(unsigned int value = 0)
+        ColorRGBA(unsigned int value = 0, unsigned int a = 255)
         {
-            this->value = value;
+            this->value = (value & 0x00ffffff) | (a << 24);
         }
 
         ColorRGBA(unsigned int r, unsigned int g, unsigned int b, unsigned int a = 255)

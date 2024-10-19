@@ -115,6 +115,34 @@ class Canvas
             }
         }
 
+        void drawAALine(int x1, int y1, int x2, int y2, ColorRGBA color)
+        {
+            int dx = abs(x2 - x1);
+            int dy = abs(y2 - y1);
+            int sx = x1 < x2 ? 1 : -1;
+            int sy = y1 < y2 ? 1 : -1;
+            int err = dx - dy, ee, xx;
+            int ed = dx + dy == 0 ? 1 : sqrt((float)dx * dx + (float)dy * dy);
+
+            while (true) {
+                setPixel(x1, y1, ColorRGBA(color.value, 255 - 255 * abs(err - dx + dy) / ed));
+                ee = err;
+                xx = x1;
+                if (ee * 2 >= -dx) {
+                    if (x1 == x2) break;
+                    if (ee + dy < ed) setPixel(x1, y1 + sy, ColorRGBA(color.value, 255 - 255 * (ee + dy) / ed));
+                    err -= dy;
+                    x1 += sx;
+                }
+                if (ee * 2 <= dy) {
+                    if (y1 == y2) break;
+                    if (dx - ee < ed) setPixel(xx + sx, y1, ColorRGBA(color.value, 255 - 255 * (dx - ee) / ed));
+                    err += dx;
+                    y1 += sy;
+                }
+            }
+        }
+
         void drawLine(int x1, int y1, int x2, int y2, ColorRGBA color)
         {
             int dx = abs(x2 - x1);
@@ -148,19 +176,41 @@ class Canvas
             setPixel(x2, y2, color);
         }
 
+        void drawMidpointCircle(int cx, int cy, int r, ColorRGBA color)
+        {
+            int x = 0;
+            int y = -r;
+            int p = -r;
+
+            while (x < -y) {
+                if (p > 0) p += 2 * (x + ++y) + 1;
+                else p += 2 * x + 1;
+                setPixel(cx + x, cy + y, color);
+                setPixel(cx - x, cy + y, color);
+                setPixel(cx + x, cy - y, color);
+                setPixel(cx - x, cy - y, color);
+                setPixel(cx + y, cy + x, color);
+                setPixel(cx - y, cy + x, color);
+                setPixel(cx + y, cy - x, color);
+                setPixel(cx - y, cy - x, color);
+                x++;
+            }
+        }
+
         void drawCircle(int cx, int cy, int r, ColorRGBA color)
         {
-            int x = -r;
-            int y = 0;
+            int x = 0;
+            int y = -r;
             int p = 2 - 2 * r;
-            while (x < 0) {
+
+            while (y < 0) {
                 setPixel(cx - x, cy + y, color);
                 setPixel(cx - y, cy - x, color);
                 setPixel(cx + x, cy - y, color);
                 setPixel(cx + y, cy + x, color);
                 r = p;
-                if (r <= y) p += ++y * 2 + 1;
-                if (r > x || p > y) p += ++x * 2 + 1;
+                if (r <= x) p += ++x * 2 + 1;
+                if (r > y || p > x) p += ++y * 2 + 1;
             }
         }
 
@@ -177,7 +227,6 @@ class Canvas
                 if (r > x || p > y) p += ++x * 2 + 1;
                 if (r > y) continue;
                 p += ++y * 2 + 1;
-
                 for (int i = cx + x; i <= cx - x; i++) setPixel(i, cy + y, color);
                 for (int i = cx + x; i <= cx - x; i++) setPixel(i, cy - y, color);
             }
