@@ -27,10 +27,23 @@ void show(OpenGL *openGL)
     // openGL->canvas->drawRectangle(openGL->canvas->width >> 1, openGL->canvas->height >> 1, 15, 30, ColorRGBA(128, 0, 64, 128));
     // openGL->canvas->drawFilledRectangle(openGL->canvas->width >> 1, openGL->canvas->height >> 1, 20, 30, ColorRGBA(128, 0, 64, 128));
 
-    openGL->canvas->drawAALine(openGL->canvas->width >> 1, openGL->canvas->height >> 1, openGL->mouseX, openGL->mouseY, ColorRGBA(255, 255, 0));
+    // openGL->canvas->drawAALine(openGL->canvas->width >> 1, openGL->canvas->height >> 1, openGL->mouseX, openGL->mouseY, ColorRGBA(255, 128, 0));
 
     // openGL->canvas->setPixels(openGL->mouseX - (mouseSprite->width >> 1), openGL->mouseY - (mouseSprite->height >> 1), mouseSprite);
     openGL->canvas->setPixel(openGL->mouseX, openGL->mouseY, ColorRGBA(255, 255, 255));
+
+    openGL->canvas->drawBezierCurve_quadratic(
+        10, 10,
+        openGL->canvas->width >> 1, openGL->canvas->height - 10,
+        openGL->canvas->width - 10, 10,
+        15, ColorRGBA(255, 255, 0));
+
+    openGL->canvas->drawBezierCurve_cubic(
+        0, 0,
+        openGL->canvas->width >> 2, openGL->canvas->height - 1,
+        (openGL->canvas->width >> 2) * 3, 10,
+        openGL->canvas->width - 1, openGL->canvas->height - 1,
+        15, ColorRGBA(255, 0, 255));
 }
 
 int main()
